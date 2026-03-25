@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "Project": {
+      "title": "Project",
+      "description": "A knitting project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "counters": {
+          "type": "array",
+          "items": { "$ref": "Counter" }
+        },
+        "pdfId": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "notes": { "type": "string" },
+        "userId": { "type": "string" },
+        "chart": { "$ref": "Chart" },
+        "gauge": { "$ref": "Gauge" }
+      },
+      "required": ["id", "name", "counters", "createdAt", "userId"]
+    },
+    "Counter": {
+      "title": "Counter",
+      "description": "A counter for a project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "value": { "type": "number" },
+        "target": { "type": "number" },
+        "reminders": {
+          "type": "array",
+          "items": { "$ref": "Reminder" }
+        }
+      },
+      "required": ["id", "name", "value"]
+    },
+    "Reminder": {
+      "title": "Reminder",
+      "description": "A reminder for a specific row",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "row": { "type": "number" },
+        "message": { "type": "string" }
+      },
+      "required": ["id", "row", "message"]
+    },
+    "Chart": {
+      "title": "Chart",
+      "description": "Knitting chart data",
+      "type": "object",
+      "properties": {
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "cells": { "type": "object" }
+      },
+      "required": ["width", "height", "cells"]
+    },
+    "Gauge": {
+      "title": "Gauge",
+      "description": "Knitting gauge data",
+      "type": "object",
+      "properties": {
+        "stitches": { "type": "number" },
+        "rows": { "type": "number" },
+        "width": { "type": "number" },
+        "length": { "type": "number" },
+        "unit": { "type": "string" },
+        "patternStitches": { "type": "number" },
+        "patternRows": { "type": "number" },
+        "patternWidth": { "type": "number" },
+        "patternLength": { "type": "number" }
+      },
+      "required": ["stitches", "rows", "width", "length", "unit"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/projects/{projectId}": {
+      "schema": "Project",
+      "description": "User's knitting projects"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "KnitTracker",
+  "description": "A knitting app with separate counters for each project and the ability to import PDF files, designed to run offline on iOS and Android.",
+  "requestFramePermissions": []
+}

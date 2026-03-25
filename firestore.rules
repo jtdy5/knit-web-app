@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users/{userId}/projects
+    // Document ID: {projectId}
+    // Fields:
+    //   - id: string (required) - Project ID
+    //   - name: string (required, max 100 chars) - Project name
+    //   - counters: list (required, max 100 items) - Array of counters
+    //   - pdfId: string (optional, max 100 chars) - ID of the PDF file
+    //   - createdAt: number (required) - Creation timestamp
+    //   - notes: string (optional, max 10000 chars) - Project notes
+    //   - userId: string (required) - Owner's user ID
+    //   - chart: map (optional) - Chart data
+    //   - gauge: map (optional) - Gauge data
+    //
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidChart(data) {
+      return data.keys().hasAll(['width', 'height', 'cells']) &&
+             data.width is number && data.width > 0 && data.width <= 200 &&
+             data.height is number && data.height > 0 && data.height <= 500 &&
+             data.cells is map;
+    }
+
+    function isValidGauge(data) {
+      return data.keys().hasAll(['stitches', 'rows', 'width', 'length', 'unit']) &&
+             data.stitches is number && data.rows is number &&
+             data.width is number && data.length is number &&
+             data.unit is string && (data.unit == 'cm' || data.unit == 'inch') &&
+             (!('patternStitches' in data) || data.patternStitches is number) &&
+             (!('patternRows' in data) || data.patternRows is number) &&
+             (!('patternWidth' in data) || data.patternWidth is number) &&
+             (!('patternLength' in data) || data.patternLength is number);
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['id', 'name', 'counters', 'createdAt', 'userId']) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.counters is list && data.counters.size() <= 100 &&
+             data.createdAt is number &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
+             (!('pdfId' in data) || (data.pdfId is string && data.pdfId.size() < 100)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() < 10000)) &&
+             (!('chart' in data) || isValidChart(data.chart)) &&
+             (!('gauge' in data) || isValidGauge(data.gauge));
+    }
+
+    function uidUnchanged() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
+    }
+
+    match /users/{userId}/projects/{projectId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidProject(request.resource.data) && uidUnchanged();
+      allow update: if isOwner(userId) && isValidProject(request.resource.data) && uidNotModified();
+      allow delete: if isOwner(userId);
+    }
+  }
+}
